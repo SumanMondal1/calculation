@@ -297,6 +297,48 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.045); }
 
 .row-between { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 10px; color: #e2e8f0; }
 
+/* ---------- delivery cards (replaces a horizontally-scrolling table that
+   was unreadable on a phone - every field now has its own visible label,
+   nothing scrolls out of view while filling it in) ---------- */
+.delivery-cards { display: flex; flex-direction: column; gap: 14px; }
+
+.delivery-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.delivery-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+.delivery-card-index {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.3);
+  color: #e0e7ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.delivery-name-input { flex: 1; min-width: 0; font-weight: 600; }
+
+.delivery-card-summary {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.delivery-card-summary span { display: flex; flex-direction: column; gap: 2px; font-size: 0.78rem; color: #94a3b8; }
+.delivery-card-summary span strong { font-size: 0.95rem; color: #e2e8f0; font-weight: 700; }
+.delivery-card-summary span.warn strong { color: #fbbf24; }
+
 /* ---------- denominations ---------- */
 .denom-grid {
   display: grid;

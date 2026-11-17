@@ -16,6 +16,16 @@ function nextId(rows) {
   return rows.reduce((max, row) => Math.max(max, row.id), 0) + 1;
 }
 
+// A controlled number input that eagerly converts '' to 0 on every keystroke
+// makes it impossible to clear the field - backspacing to empty immediately
+// snaps back to showing "0" before you can type a new number. Keeping '' as
+// '' until there's a real digit lets the field empty out properly; every
+// calculation already does Number(value || 0), so '' is still treated as 0
+// everywhere it's used, nothing downstream needs to change.
+function numericValue(rawValue) {
+  return rawValue === '' ? '' : Number(rawValue);
+}
+
 function Card({ title, subtitle, children }) {
   return (
     <section className="glass-card card">
@@ -56,46 +66,64 @@ function DeliveriesSection({ rows, setRows, agencies }) {
   const removeRow = (id) => setRows((current) => current.filter((row) => row.id !== id));
 
   return (
-    <Card title="📦 Deliveries & Sales" subtitle="Pick a saved agency below, or type a new name (e.g. a local sale) — same columns either way">
+    <Card title="📦 Deliveries & Sales" subtitle="Pick a saved agency below, or type a new name (e.g. a local sale) — same fields either way">
       <datalist id="agency-options">
         {agencies.map((agency) => <option key={agency.id} value={agency.name} />)}
       </datalist>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th><th>Qty</th><th>Rate</th><th>Expected</th><th>Cash</th><th>Online (Phone Pay)</th><th>Shortage</th><th>Collected</th><th>Due</th><th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const expected = Number(row.quantity || 0) * Number(row.rate || 0);
-              const collected = Number(row.cashReceived || 0);
-              const due = expected - collected - Number(row.shortCollected || 0);
-              return (
-                <tr key={row.id}>
-                  <td><input list="agency-options" placeholder="Agency name or 'Local Sale'" value={row.name} onChange={(e) => handleNameChange(row.id, e.target.value)} /></td>
-                  <td><input type="number" min="0" className="num-input" value={row.quantity} onChange={(e) => updateRow(row.id, 'quantity', Number(e.target.value))} /></td>
-                  <td><input type="number" min="0" className="num-input" value={row.rate} onChange={(e) => updateRow(row.id, 'rate', Number(e.target.value))} /></td>
-                  <td className="muted-cell">{formatCurrency(expected)}</td>
-                  <td><input type="number" min="0" className="num-input" value={row.cashReceived} onChange={(e) => updateRow(row.id, 'cashReceived', Number(e.target.value))} /></td>
-                  <td><input type="number" min="0" className="num-input" value={row.onlineReceived} onChange={(e) => updateRow(row.id, 'onlineReceived', Number(e.target.value))} /></td>
-                  <td><input type="number" min="0" className="num-input" value={row.shortCollected} onChange={(e) => updateRow(row.id, 'shortCollected', Number(e.target.value))} /></td>
-                  <td className="muted-cell">{formatCurrency(collected)}</td>
-                  <td className={due > 0 ? 'muted-cell warn' : 'muted-cell'}>{formatCurrency(due)}</td>
-                  <td><button type="button" className="icon-btn" onClick={() => removeRow(row.id)} aria-label="Remove row">✕</button></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+      <div className="delivery-cards">
+        {rows.map((row, index) => {
+          const expected = Number(row.quantity || 0) * Number(row.rate || 0);
+          const collected = Number(row.cashReceived || 0);
+          const due = expected - collected - Number(row.shortCollected || 0);
+          return (
+            <div className="delivery-card" key={row.id}>
+              <div className="delivery-card-head">
+                <span className="delivery-card-index">{index + 1}</span>
+                <input
+                  className="delivery-name-input"
+                  list="agency-options"
+                  placeholder="Agency name or 'Local Sale'"
+                  value={row.name}
+                  onChange={(e) => handleNameChange(row.id, e.target.value)}
+                />
+                <button type="button" className="icon-btn" onClick={() => removeRow(row.id)} aria-label="Remove row">✕</button>
+              </div>
+
+              <div className="field-grid">
+                <label>Quantity (cylinders)
+                  <input type="number" min="0" value={row.quantity} onChange={(e) => updateRow(row.id, 'quantity', numericValue(e.target.value))} />
+                </label>
+                <label>Rate (₹ / cylinder)
+                  <input type="number" min="0" value={row.rate} onChange={(e) => updateRow(row.id, 'rate', numericValue(e.target.value))} />
+                </label>
+                <label>Cash received (₹)
+                  <input type="number" min="0" value={row.cashReceived} onChange={(e) => updateRow(row.id, 'cashReceived', numericValue(e.target.value))} />
+                </label>
+                <label>Online / Phone Pay (₹)
+                  <input type="number" min="0" value={row.onlineReceived} onChange={(e) => updateRow(row.id, 'onlineReceived', numericValue(e.target.value))} />
+                </label>
+                <label>Shortage / discount (₹)
+                  <input type="number" min="0" value={row.shortCollected} onChange={(e) => updateRow(row.id, 'shortCollected', numericValue(e.target.value))} />
+                </label>
+              </div>
+
+              <div className="delivery-card-summary">
+                <span>Expected<strong>{formatCurrency(expected)}</strong></span>
+                <span>Collected<strong>{formatCurrency(collected)}</strong></span>
+                <span className={due > 0 ? 'warn' : ''}>Due<strong>{formatCurrency(due)}</strong></span>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
       <button type="button" className="ghost-btn" onClick={addRow}>+ Add row (agency, dealer, local sale...)</button>
       <p className="hint mt-sm">
-        Start typing in <strong>Name</strong> to pick a saved agency (its rate fills in automatically) - or type anything else
-        for a one-off dealer or local sale. <strong>Online</strong> is a promise that can't be verified on the spot, so it stays
-        part of <strong>Due</strong> until confirmed. <strong>Shortage</strong> is a discount nobody will ever pay back, so it is
-        never counted as Due.
+        Start typing in <strong>Agency name</strong> to pick a saved agency (its rate fills in automatically) - or type
+        anything else for a one-off dealer or local sale. <strong>Online</strong> is a promise that can't be verified on the
+        spot, so it stays part of <strong>Due</strong> until confirmed. <strong>Shortage</strong> is a discount nobody will
+        ever pay back, so it is never counted as Due.
       </p>
     </Card>
   );
@@ -113,7 +141,7 @@ function ExpensesSection({ expenses, setExpenses }) {
         {expenses.map((row) => (
           <div className="expense-row" key={row.id}>
             <input placeholder="e.g. Diesel" value={row.label} onChange={(e) => updateRow(row.id, 'label', e.target.value)} />
-            <input type="number" min="0" className="num-input" value={row.amount} onChange={(e) => updateRow(row.id, 'amount', Number(e.target.value))} />
+            <input type="number" min="0" className="num-input" value={row.amount} onChange={(e) => updateRow(row.id, 'amount', numericValue(e.target.value))} />
             <button type="button" className="icon-btn" onClick={() => removeRow(row.id)} aria-label="Remove expense">✕</button>
           </div>
         ))}
@@ -128,7 +156,7 @@ function ExpensesSection({ expenses, setExpenses }) {
 }
 
 function DenominationSection({ denominations, setDenominations, netCashInHand }) {
-  const update = (value, count) => setDenominations((current) => ({ ...current, [value]: count }));
+  const update = (value, rawCount) => setDenominations((current) => ({ ...current, [value]: numericValue(rawCount) }));
   const total = calculateCashDenominationTotal(denominations);
   const diff = total - netCashInHand;
   const status = diff === 0 ? 'balanced' : diff > 0 ? 'excess' : 'short';
@@ -140,7 +168,7 @@ function DenominationSection({ denominations, setDenominations, netCashInHand })
         {NOTE_VALUES.map((value) => (
           <label key={value} className="denom-cell">
             <span>₹{value}</span>
-            <input type="number" min="0" value={denominations[value] || 0} onChange={(e) => update(value, Number(e.target.value))} />
+            <input type="number" min="0" value={denominations[value]} onChange={(e) => update(value, e.target.value)} />
             <small>{formatCurrency(value * Number(denominations[value] || 0))}</small>
           </label>
         ))}
@@ -150,7 +178,7 @@ function DenominationSection({ denominations, setDenominations, netCashInHand })
         {COIN_VALUES.map((value) => (
           <label key={value} className="denom-cell">
             <span>₹{value}</span>
-            <input type="number" min="0" value={denominations[value] || 0} onChange={(e) => update(value, Number(e.target.value))} />
+            <input type="number" min="0" value={denominations[value]} onChange={(e) => update(value, e.target.value)} />
             <small>{formatCurrency(value * Number(denominations[value] || 0))}</small>
           </label>
         ))}
@@ -257,7 +285,7 @@ export default function HisabEditor({ token, onSubmit, submitting, lastSavedDate
           <Card title="🛢️ Opening Stock" subtitle="Cylinders taken out of the godown this morning">
             <label className="single-field">
               Cylinders taken
-              <input type="number" min="0" value={openingStock} onChange={(e) => setOpeningStock(Number(e.target.value))} />
+              <input type="number" min="0" value={openingStock} onChange={(e) => setOpeningStock(numericValue(e.target.value))} />
             </label>
           </Card>
 
