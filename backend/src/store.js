@@ -2,6 +2,13 @@ import crypto from 'node:crypto';
 import pg from 'pg';
 import { calculateHisab, calculateCashDenominationTotal } from './financialEngine.js';
 
+// By default node-postgres turns a DATE column into a JS Date at local
+// midnight, and converting that to an ISO string later shifts it a day in
+// any timezone ahead of UTC (e.g. IST). We only ever treat dates as plain
+// 'YYYY-MM-DD' strings in this app, so take the raw string straight from
+// Postgres (OID 1082 = date) and skip the Date-object round trip entirely.
+pg.types.setTypeParser(1082, (value) => value);
+
 const ADMIN_USERNAME = 'admin';
 
 function hashPassword(password) {
