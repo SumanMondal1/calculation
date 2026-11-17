@@ -1,9 +1,6 @@
-// Points at the backend over the LAN so a phone on the same Wi-Fi can reach
-// this PC's Express server - this is a quick local test setup. Once the
-// backend is deployed to the internet (see the deployment plan), swap this
-// for that public URL and every phone will work from anywhere, not just
-// this Wi-Fi network.
-const BASE_URL = 'http://192.168.0.101:4000';
+// Deployed on Render, backed by Supabase Postgres - works from any network,
+// any location, not tied to this PC or any particular Wi-Fi.
+const BASE_URL = 'https://calculation-w6of.onrender.com';
 
 async function request(path, { method = 'GET', token, body } = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
