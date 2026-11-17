@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import HisabReport from './HisabReport';
-
-const NAV_ITEMS = [
-  { key: 'partners', label: 'Delivery Partners', icon: '🧑‍✈️' },
-  { key: 'agencies', label: 'Agencies', icon: '🏢' },
-  { key: 'reports', label: 'Reports', icon: '📊' },
-];
+import LanguageSwitcher from './LanguageSwitcher';
+import { useLanguage } from '../i18n/LanguageContext';
+import { translateError } from '../i18n/translations';
 
 function PartnersSection({ session, partners, loadPartners, loadError }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', username: '', password: '' });
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -22,7 +20,7 @@ function PartnersSection({ session, partners, loadPartners, loadError }) {
       setForm({ name: '', username: '', password: '' });
       loadPartners();
     } catch (err) {
-      setCreateError(err.message);
+      setCreateError(translateError(err.message, t));
     } finally {
       setCreating(false);
     }
@@ -31,31 +29,31 @@ function PartnersSection({ session, partners, loadPartners, loadError }) {
   return (
     <>
       <div className="glass-card">
-        <h2>Create delivery partner</h2>
-        <p className="card-sub-hint">Give them this username/password - they log into the same app to submit their daily hisab.</p>
+        <h2>{t('createPartnerTitle')}</h2>
+        <p className="card-sub-hint">{t('createPartnerHint')}</p>
         <form className="stacked-form" onSubmit={handleCreate}>
-          <input placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input placeholder="Username / mobile" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
-          <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          <input placeholder={t('fullNamePlaceholder')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input placeholder={t('usernameMobilePlaceholder')} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
+          <input type="password" placeholder={t('passwordPlaceholder')} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
           <button className="primary-btn" type="submit" disabled={creating}>
-            {creating ? 'Creating…' : '+ Create partner'}
+            {creating ? t('creating') : t('createPartnerBtn')}
           </button>
           {createError && <div className="auth-error">{createError}</div>}
         </form>
       </div>
 
       <div className="glass-card">
-        <h2>All delivery partners</h2>
+        <h2>{t('allPartnersTitle')}</h2>
         <ul className="partner-list">
           {partners.map((partner) => (
             <li key={partner.id}>
               <div className="partner-pill static">
                 {partner.name}
-                <span>@{partner.username} · joined {new Date(partner.createdAt).toLocaleDateString()}</span>
+                <span>@{partner.username} · {t('joined', { date: new Date(partner.createdAt).toLocaleDateString() })}</span>
               </div>
             </li>
           ))}
-          {partners.length === 0 && <li className="hint">No delivery partners yet — create one above.</li>}
+          {partners.length === 0 && <li className="hint">{t('noPartnersYet')}</li>}
         </ul>
         {loadError && <div className="auth-error">{loadError}</div>}
       </div>
@@ -64,6 +62,7 @@ function PartnersSection({ session, partners, loadPartners, loadError }) {
 }
 
 function AgenciesSection({ session, agencies, loadAgencies }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', defaultRate: '' });
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -77,7 +76,7 @@ function AgenciesSection({ session, agencies, loadAgencies }) {
       setForm({ name: '', defaultRate: '' });
       loadAgencies();
     } catch (err) {
-      setCreateError(err.message);
+      setCreateError(translateError(err.message, t));
     } finally {
       setCreating(false);
     }
@@ -86,27 +85,23 @@ function AgenciesSection({ session, agencies, loadAgencies }) {
   return (
     <>
       <div className="glass-card">
-        <h2>Create agency</h2>
-        <p className="card-sub-hint">
-          A saved agency is a dealer your delivery partners regularly hand cylinders to, at an agreed rate. Once created
-          here, every partner sees it as a pick in their "Deliveries &amp; Sales" form, with the rate filled in
-          automatically — no retyping the name or rate each day.
-        </p>
+        <h2>{t('createAgencyTitle')}</h2>
+        <p className="card-sub-hint">{t('createAgencyHint')}</p>
         <form className="stacked-form" onSubmit={handleCreate}>
-          <input placeholder="Agency name (e.g. Shree Balaji Gas Agency)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input type="number" min="0" placeholder="Agreed rate per cylinder (e.g. 1100)" value={form.defaultRate} onChange={(e) => setForm({ ...form, defaultRate: e.target.value })} />
+          <input placeholder={t('agencyNameFormPlaceholder')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input type="number" min="0" placeholder={t('agencyRatePlaceholder')} value={form.defaultRate} onChange={(e) => setForm({ ...form, defaultRate: e.target.value })} />
           <button className="primary-btn" type="submit" disabled={creating}>
-            {creating ? 'Creating…' : '+ Create agency'}
+            {creating ? t('creating') : t('createAgencyBtn')}
           </button>
           {createError && <div className="auth-error">{createError}</div>}
         </form>
       </div>
 
       <div className="glass-card">
-        <h2>All agencies</h2>
+        <h2>{t('allAgenciesTitle')}</h2>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Default rate / cylinder</th></tr></thead>
+            <thead><tr><th>{t('agencyNameCol')}</th><th>{t('agencyRateCol')}</th></tr></thead>
             <tbody>
               {agencies.map((agency) => (
                 <tr key={agency.id}>
@@ -117,13 +112,14 @@ function AgenciesSection({ session, agencies, loadAgencies }) {
             </tbody>
           </table>
         </div>
-        {agencies.length === 0 && <p className="hint">No agencies yet — create one above.</p>}
+        {agencies.length === 0 && <p className="hint">{t('noAgenciesYet')}</p>}
       </div>
     </>
   );
 }
 
 function ReportsSection({ session, partners }) {
+  const { t } = useLanguage();
   const [selectedPartnerId, setSelectedPartnerId] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -143,7 +139,7 @@ function ReportsSection({ session, partners }) {
         setSubmissions(data);
         setSelectedSubmission(data[0] || null);
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => setError(translateError(err.message, t)))
       .finally(() => setLoadingSubs(false));
   }, [selectedPartnerId, session.token]);
 
@@ -152,7 +148,7 @@ function ReportsSection({ session, partners }) {
   return (
     <>
       <div className="glass-card">
-        <h2>Select a delivery partner</h2>
+        <h2>{t('selectPartnerTitle')}</h2>
         <div className="submission-chip-row">
           {partners.map((partner) => (
             <button
@@ -164,7 +160,7 @@ function ReportsSection({ session, partners }) {
               {partner.name}
             </button>
           ))}
-          {partners.length === 0 && <p className="hint">No delivery partners yet.</p>}
+          {partners.length === 0 && <p className="hint">{t('noPartnersShort')}</p>}
         </div>
       </div>
 
@@ -172,9 +168,9 @@ function ReportsSection({ session, partners }) {
 
       {selectedPartner && (
         <div className="glass-card">
-          <h2>{selectedPartner.name}'s submissions</h2>
-          {loadingSubs && <p className="hint">Loading…</p>}
-          {!loadingSubs && submissions.length === 0 && <p className="hint">No hisab submitted yet.</p>}
+          <h2>{t('partnerSubmissionsTitle', { name: selectedPartner.name })}</h2>
+          {loadingSubs && <p className="hint">{t('loading')}</p>}
+          {!loadingSubs && submissions.length === 0 && <p className="hint">{t('noHisabYet')}</p>}
           <div className="submission-chip-row">
             {submissions.map((sub) => (
               <button
@@ -193,19 +189,26 @@ function ReportsSection({ session, partners }) {
 
       {selectedSubmission && <HisabReport submission={selectedSubmission} />}
 
-      {!selectedPartner && <div className="glass-card empty-state">Select a delivery partner above to see their hisab submissions.</div>}
+      {!selectedPartner && <div className="glass-card empty-state">{t('selectPartnerPrompt')}</div>}
     </>
   );
 }
 
 export default function AdminDashboard({ session, onLogout }) {
+  const { t } = useLanguage();
+  const NAV_ITEMS = [
+    { key: 'partners', label: t('navPartners'), icon: '🧑‍✈️' },
+    { key: 'agencies', label: t('navAgencies'), icon: '🏢' },
+    { key: 'reports', label: t('navReports'), icon: '📊' },
+  ];
+
   const [activeSection, setActiveSection] = useState('partners');
   const [partners, setPartners] = useState([]);
   const [agencies, setAgencies] = useState([]);
   const [loadError, setLoadError] = useState('');
 
-  const loadPartners = () => api.listPartners(session.token).then(setPartners).catch((err) => setLoadError(err.message));
-  const loadAgencies = () => api.listAgencies(session.token).then(setAgencies).catch((err) => setLoadError(err.message));
+  const loadPartners = () => api.listPartners(session.token).then(setPartners).catch((err) => setLoadError(translateError(err.message, t)));
+  const loadAgencies = () => api.listAgencies(session.token).then(setAgencies).catch((err) => setLoadError(translateError(err.message, t)));
 
   useEffect(() => {
     loadPartners();
@@ -216,10 +219,13 @@ export default function AdminDashboard({ session, onLogout }) {
     <div className="hisab-app">
       <header className="glass-card hisab-header">
         <div>
-          <h1>Admin Dashboard</h1>
-          <p>Manage delivery partners, agencies, and review daily hisab</p>
+          <h1>{t('adminDashboard')}</h1>
+          <p>{t('adminSubtitle')}</p>
         </div>
-        <button className="ghost-btn" onClick={onLogout}>Logout</button>
+        <div className="header-actions">
+          <LanguageSwitcher />
+          <button className="ghost-btn" onClick={onLogout}>{t('logout')}</button>
+        </div>
       </header>
 
       <div className="admin-layout">

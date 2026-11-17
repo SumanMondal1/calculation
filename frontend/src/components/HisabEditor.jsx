@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { calculateHisab, calculateCashDenominationTotal, NOTE_VALUES, COIN_VALUES } from '../utils/hisabEngine';
 import { api } from '../api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -45,6 +46,7 @@ function Card({ title, subtitle, children }) {
 // discount nobody will ever pay back, so it is subtracted out before Due is
 // calculated, never added to it.
 function DeliveriesSection({ rows, setRows, agencies }) {
+  const { t } = useLanguage();
   const updateRow = (id, field, value) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
   };
@@ -66,7 +68,7 @@ function DeliveriesSection({ rows, setRows, agencies }) {
   const removeRow = (id) => setRows((current) => current.filter((row) => row.id !== id));
 
   return (
-    <Card title="📦 Deliveries & Sales" subtitle="Pick a saved agency below, or type a new name (e.g. a local sale) — same fields either way">
+    <Card title={t('deliveriesTitle')} subtitle={t('deliveriesSubtitle')}>
       <datalist id="agency-options">
         {agencies.map((agency) => <option key={agency.id} value={agency.name} />)}
       </datalist>
@@ -83,7 +85,7 @@ function DeliveriesSection({ rows, setRows, agencies }) {
                 <input
                   className="delivery-name-input"
                   list="agency-options"
-                  placeholder="Agency name or 'Local Sale'"
+                  placeholder={t('agencyNamePlaceholder')}
                   value={row.name}
                   onChange={(e) => handleNameChange(row.id, e.target.value)}
                 />
@@ -91,79 +93,77 @@ function DeliveriesSection({ rows, setRows, agencies }) {
               </div>
 
               <div className="field-grid">
-                <label>Quantity (cylinders)
+                <label>{t('quantityLabel')}
                   <input type="number" min="0" value={row.quantity} onChange={(e) => updateRow(row.id, 'quantity', numericValue(e.target.value))} />
                 </label>
-                <label>Rate (₹ / cylinder)
+                <label>{t('rateLabel')}
                   <input type="number" min="0" value={row.rate} onChange={(e) => updateRow(row.id, 'rate', numericValue(e.target.value))} />
                 </label>
-                <label>Cash received (₹)
+                <label>{t('cashReceivedLabel')}
                   <input type="number" min="0" value={row.cashReceived} onChange={(e) => updateRow(row.id, 'cashReceived', numericValue(e.target.value))} />
                 </label>
-                <label>Online / Phone Pay (₹)
+                <label>{t('onlineReceivedLabel')}
                   <input type="number" min="0" value={row.onlineReceived} onChange={(e) => updateRow(row.id, 'onlineReceived', numericValue(e.target.value))} />
                 </label>
-                <label>Shortage / discount (₹)
+                <label>{t('shortageLabel')}
                   <input type="number" min="0" value={row.shortCollected} onChange={(e) => updateRow(row.id, 'shortCollected', numericValue(e.target.value))} />
                 </label>
               </div>
 
               <div className="delivery-card-summary">
-                <span>Expected<strong>{formatCurrency(expected)}</strong></span>
-                <span>Collected<strong>{formatCurrency(collected)}</strong></span>
-                <span className={due > 0 ? 'warn' : ''}>Due<strong>{formatCurrency(due)}</strong></span>
+                <span>{t('expected')}<strong>{formatCurrency(expected)}</strong></span>
+                <span>{t('collected')}<strong>{formatCurrency(collected)}</strong></span>
+                <span className={due > 0 ? 'warn' : ''}>{t('due')}<strong>{formatCurrency(due)}</strong></span>
               </div>
             </div>
           );
         })}
       </div>
 
-      <button type="button" className="ghost-btn" onClick={addRow}>+ Add row (agency, dealer, local sale...)</button>
-      <p className="hint mt-sm">
-        Start typing in <strong>Agency name</strong> to pick a saved agency (its rate fills in automatically) - or type
-        anything else for a one-off dealer or local sale. <strong>Online</strong> is a promise that can't be verified on the
-        spot, so it stays part of <strong>Due</strong> until confirmed. <strong>Shortage</strong> is a discount nobody will
-        ever pay back, so it is never counted as Due.
-      </p>
+      <button type="button" className="ghost-btn" onClick={addRow}>{t('addDeliveryRow')}</button>
+      {/* eslint-disable-next-line react/no-danger -- fixed app copy, not user input */}
+      <p className="hint mt-sm" dangerouslySetInnerHTML={{ __html: t('deliveriesHint') }} />
     </Card>
   );
 }
 
 function ExpensesSection({ expenses, setExpenses }) {
+  const { t } = useLanguage();
   const updateRow = (id, field, value) => setExpenses((current) => current.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
   const addRow = () => setExpenses((current) => [...current, { id: nextId(current), label: '', amount: 0 }]);
   const removeRow = (id) => setExpenses((current) => current.filter((row) => row.id !== id));
   const total = expenses.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
   return (
-    <Card title="🧾 Expenses" subtitle="Diesel, lunch, and other on-the-road costs">
+    <Card title={t('expensesTitle')} subtitle={t('expensesSubtitle')}>
       <div className="expense-rows">
         {expenses.map((row) => (
           <div className="expense-row" key={row.id}>
-            <input placeholder="e.g. Diesel" value={row.label} onChange={(e) => updateRow(row.id, 'label', e.target.value)} />
+            <input placeholder={t('expensePlaceholder')} value={row.label} onChange={(e) => updateRow(row.id, 'label', e.target.value)} />
             <input type="number" min="0" className="num-input" value={row.amount} onChange={(e) => updateRow(row.id, 'amount', numericValue(e.target.value))} />
             <button type="button" className="icon-btn" onClick={() => removeRow(row.id)} aria-label="Remove expense">✕</button>
           </div>
         ))}
-        {expenses.length === 0 && <p className="hint">No expenses added yet.</p>}
+        {expenses.length === 0 && <p className="hint">{t('noExpensesYet')}</p>}
       </div>
       <div className="row-between">
-        <button type="button" className="ghost-btn" onClick={addRow}>+ Add expense</button>
-        <span>Total: <strong>{formatCurrency(total)}</strong></span>
+        <button type="button" className="ghost-btn" onClick={addRow}>{t('addExpense')}</button>
+        <span>{t('total')}: <strong>{formatCurrency(total)}</strong></span>
       </div>
     </Card>
   );
 }
 
 function DenominationSection({ denominations, setDenominations, netCashInHand }) {
+  const { t } = useLanguage();
   const update = (value, rawCount) => setDenominations((current) => ({ ...current, [value]: numericValue(rawCount) }));
   const total = calculateCashDenominationTotal(denominations);
   const diff = total - netCashInHand;
   const status = diff === 0 ? 'balanced' : diff > 0 ? 'excess' : 'short';
 
   return (
-    <Card title="💵 Cash Denomination Count" subtitle="Count every note and coin handed over tonight">
-      <p className="denom-group-label">Notes</p>
+    <Card title={t('denominationTitle')} subtitle={t('denominationSubtitle')}>
+      <p className="denom-group-label">{t('notes')}</p>
       <div className="denom-grid">
         {NOTE_VALUES.map((value) => (
           <label key={value} className="denom-cell">
@@ -173,7 +173,7 @@ function DenominationSection({ denominations, setDenominations, netCashInHand })
           </label>
         ))}
       </div>
-      <p className="denom-group-label">Coins</p>
+      <p className="denom-group-label">{t('coins')}</p>
       <div className="denom-grid">
         {COIN_VALUES.map((value) => (
           <label key={value} className="denom-cell">
@@ -184,11 +184,11 @@ function DenominationSection({ denominations, setDenominations, netCashInHand })
         ))}
       </div>
       <div className="denom-total">
-        <span>Counted total: <strong>{formatCurrency(total)}</strong></span>
+        <span>{t('countedTotal')}: <strong>{formatCurrency(total)}</strong></span>
         <span className={`status-pill ${status}`}>
-          {status === 'balanced' && 'Balanced ✓'}
-          {status === 'short' && `Short by ${formatCurrency(Math.abs(diff))}`}
-          {status === 'excess' && `Excess by ${formatCurrency(Math.abs(diff))}`}
+          {status === 'balanced' && t('balanced')}
+          {status === 'short' && t('shortBy', { amount: formatCurrency(Math.abs(diff)) })}
+          {status === 'excess' && t('excessBy', { amount: formatCurrency(Math.abs(diff)) })}
         </span>
       </div>
     </Card>
@@ -196,35 +196,36 @@ function DenominationSection({ denominations, setDenominations, netCashInHand })
 }
 
 function SummarySidebar({ hisab, openingStock }) {
+  const { t } = useLanguage();
   return (
     <aside className="glass-card summary-panel">
-      <h3>Today's Summary</h3>
+      <h3>{t('todaysSummary')}</h3>
 
       <div className="summary-block">
-        <div className="summary-row"><span>Opening stock</span><strong>{openingStock} cylinders</strong></div>
-        <div className="summary-row"><span>Distributed</span><strong>{hisab.cylindersDistributed} cylinders</strong></div>
+        <div className="summary-row"><span>{t('openingStockRow')}</span><strong>{openingStock} {t('cylinders')}</strong></div>
+        <div className="summary-row"><span>{t('distributed')}</span><strong>{hisab.cylindersDistributed} {t('cylinders')}</strong></div>
         <span className={`status-pill small ${hisab.cylinderStatus}`}>
-          {hisab.cylinderStatus === 'balanced' && 'All cylinders accounted for ✓'}
-          {hisab.cylinderStatus === 'short' && `${hisab.cylinderDifference} cylinders unaccounted`}
-          {hisab.cylinderStatus === 'excess' && `${Math.abs(hisab.cylinderDifference)} extra cylinders?`}
+          {hisab.cylinderStatus === 'balanced' && t('allAccountedFor')}
+          {hisab.cylinderStatus === 'short' && t('cylindersUnaccounted', { count: hisab.cylinderDifference })}
+          {hisab.cylinderStatus === 'excess' && t('extraCylinders', { count: Math.abs(hisab.cylinderDifference) })}
         </span>
       </div>
 
       <div className="summary-block">
-        <div className="summary-row"><span>Total expected</span><strong>{formatCurrency(hisab.totalExpected)}</strong></div>
-        <div className="summary-row"><span>Cash collected</span><strong>{formatCurrency(hisab.totalCash)}</strong></div>
-        <div className="summary-row"><span>Online (Phone Pay/UPI) — unverified</span><strong>{formatCurrency(hisab.totalOnline)}</strong></div>
+        <div className="summary-row"><span>{t('totalExpected')}</span><strong>{formatCurrency(hisab.totalExpected)}</strong></div>
+        <div className="summary-row"><span>{t('cashCollected')}</span><strong>{formatCurrency(hisab.totalCash)}</strong></div>
+        <div className="summary-row"><span>{t('onlineUnverified')}</span><strong>{formatCurrency(hisab.totalOnline)}</strong></div>
         {hisab.totalShort > 0 && (
-          <div className="summary-row"><span>Shortage (discount, not due)</span><strong>{formatCurrency(hisab.totalShort)}</strong></div>
+          <div className="summary-row"><span>{t('shortageNotDue')}</span><strong>{formatCurrency(hisab.totalShort)}</strong></div>
         )}
         {hisab.totalDue > 0 && (
-          <div className="summary-row warn"><span>Due / pending</span><strong>{formatCurrency(hisab.totalDue)}</strong></div>
+          <div className="summary-row warn"><span>{t('duePending')}</span><strong>{formatCurrency(hisab.totalDue)}</strong></div>
         )}
-        <div className="summary-row"><span>Expenses</span><strong>-{formatCurrency(hisab.totalExpenses)}</strong></div>
+        <div className="summary-row"><span>{t('expensesRow')}</span><strong>-{formatCurrency(hisab.totalExpenses)}</strong></div>
       </div>
 
       <div className="summary-block highlight">
-        <div className="summary-row"><span>Net cash to hand over</span></div>
+        <div className="summary-row"><span>{t('netCashToHandOver')}</span></div>
         <div className="big-number">{formatCurrency(hisab.netCashInHand)}</div>
       </div>
     </aside>
@@ -251,6 +252,7 @@ const DEMO_EXPENSES = [
 const DEMO_DENOMINATIONS = { 500: 98, 200: 0, 100: 3, 50: 0, 20: 1, 10: 0, 5: 0, 2: 0, 1: 0 };
 
 export default function HisabEditor({ token, onSubmit, submitting, lastSavedDate }) {
+  const { t } = useLanguage();
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [openingStock, setOpeningStock] = useState(50);
   const [deliveries, setDeliveries] = useState(DEMO_DELIVERIES);
@@ -275,16 +277,16 @@ export default function HisabEditor({ token, onSubmit, submitting, lastSavedDate
     <>
       <div className="glass-card date-card">
         <label className="single-field">
-          Date
+          {t('date')}
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </div>
 
       <div className="hisab-layout">
         <main className="hisab-main">
-          <Card title="🛢️ Opening Stock" subtitle="Cylinders taken out of the godown this morning">
+          <Card title={t('openingStockTitle')} subtitle={t('openingStockSubtitle')}>
             <label className="single-field">
-              Cylinders taken
+              {t('cylindersTaken')}
               <input type="number" min="0" value={openingStock} onChange={(e) => setOpeningStock(numericValue(e.target.value))} />
             </label>
           </Card>
@@ -299,9 +301,9 @@ export default function HisabEditor({ token, onSubmit, submitting, lastSavedDate
 
       <div className="glass-card submit-bar">
         <button className="primary-btn large" onClick={handleSubmit} disabled={submitting}>
-          {submitting ? 'Submitting…' : "Submit today's hisab"}
+          {submitting ? t('submitting') : t('submitHisab')}
         </button>
-        {lastSavedDate && <span className="submit-confirm">Saved for {lastSavedDate} ✓</span>}
+        {lastSavedDate && <span className="submit-confirm">{t('savedFor', { date: lastSavedDate })}</span>}
       </div>
     </>
   );

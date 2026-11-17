@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import HisabEditor from './HisabEditor';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useLanguage } from '../i18n/LanguageContext';
+import { translateError } from '../i18n/translations';
 
 export default function PartnerDashboard({ session, onLogout }) {
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [lastSavedDate, setLastSavedDate] = useState(null);
   const [error, setError] = useState('');
@@ -22,7 +26,7 @@ export default function PartnerDashboard({ session, onLogout }) {
       setLastSavedDate(record.date);
       loadMine();
     } catch (err) {
-      setError(err.message);
+      setError(translateError(err.message, t));
     } finally {
       setSubmitting(false);
     }
@@ -32,10 +36,13 @@ export default function PartnerDashboard({ session, onLogout }) {
     <div className="hisab-app">
       <header className="glass-card hisab-header">
         <div>
-          <h1>Daily Hisab</h1>
-          <p>Welcome, {session.partner?.name}</p>
+          <h1>{t('dailyHisab')}</h1>
+          <p>{t('welcomeName', { name: session.partner?.name })}</p>
         </div>
-        <button className="ghost-btn" onClick={onLogout}>Logout</button>
+        <div className="header-actions">
+          <LanguageSwitcher />
+          <button className="ghost-btn" onClick={onLogout}>{t('logout')}</button>
+        </div>
       </header>
 
       {error && <div className="glass-card auth-error">{error}</div>}
@@ -44,7 +51,7 @@ export default function PartnerDashboard({ session, onLogout }) {
 
       {mySubmissions.length > 0 && (
         <div className="glass-card history-card">
-          <h2>My past submissions</h2>
+          <h2>{t('myPastSubmissions')}</h2>
           <div className="submission-chip-row">
             {mySubmissions.map((sub) => (
               <span key={sub.id} className={`chip static ${sub.status}`}>
