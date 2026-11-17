@@ -24,7 +24,7 @@ export default function LoginScreen({ onLogin }) {
   return (
     <div className="auth-shell">
       <div className="glass-card auth-card">
-        <div className="auth-brand">⛽ Gas Agency Hisab</div>
+        <div className="auth-brand"><span className="flame-icon">⛽</span> Gas Agency Hisab</div>
         <h1>Welcome back</h1>
         <p className="auth-sub">Sign in as admin or as a delivery partner</p>
 

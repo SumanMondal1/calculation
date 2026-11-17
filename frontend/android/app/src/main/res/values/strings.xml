@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Gas Agency Hisab</string>
-    <string name="title_activity_main">Gas Agency Hisab</string>
+    <string name="app_name">Suman</string>
+    <string name="title_activity_main">Suman</string>
     <string name="package_name">com.gasagency.hisab</string>
     <string name="custom_url_scheme">com.gasagency.hisab</string>
 </resources>
