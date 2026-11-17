@@ -13,7 +13,6 @@ export const translations = {
     login: 'Login',
     signingIn: 'Signing in…',
     demoAdminLabel: 'Demo admin:',
-    demoPartnerLabel: 'Demo delivery partner:',
 
     // ---- Shared ----
     logout: 'Logout',
@@ -167,7 +166,6 @@ export const translations = {
     login: 'লগ ইন',
     signingIn: 'লগ ইন হচ্ছে…',
     demoAdminLabel: 'ডেমো অ্যাডমিন:',
-    demoPartnerLabel: 'ডেমো ডেলিভারি পার্টনার:',
 
     // ---- Shared ----
     logout: 'লগ আউট',

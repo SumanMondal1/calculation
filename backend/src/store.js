@@ -115,54 +115,14 @@ export async function initStore() {
 }
 
 async function seedDemoData() {
+  // Only the agencies are seeded now - the demo delivery partner account
+  // and its fake submissions were removed so the admin's real dashboard
+  // only ever shows real partners.
   const existingAgencies = await pool.query('SELECT id FROM agencies LIMIT 1');
   if (existingAgencies.rows.length === 0) {
     await createAgency({ name: 'Shree Balaji Gas Agency', defaultRate: 1100 });
     await createAgency({ name: 'Annapurna Gas Suppliers', defaultRate: 1200 });
   }
-
-  const existing = await pool.query('SELECT id FROM partners WHERE username = $1', ['suresh']);
-  if (existing.rows.length > 0) {
-    return;
-  }
-
-  const demoPartner = await createPartner({ name: 'Suresh Kumar', username: 'suresh', password: 'partner123' });
-
-  const isoDateDaysAgo = (days) => {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return date.toISOString().slice(0, 10);
-  };
-
-  await submitHisab(demoPartner.id, {
-    date: isoDateDaysAgo(1),
-    openingStock: 45,
-    deliveries: [
-      { name: 'Shree Balaji Gas Agency', quantity: 3, rate: 1100, cashReceived: 3300, onlineReceived: 0, shortCollected: 0 },
-      { name: 'Annapurna Gas Suppliers', quantity: 8, rate: 1200, cashReceived: 9600, onlineReceived: 0, shortCollected: 0 },
-      { name: 'Local Retail Sale', quantity: 34, rate: 1000, cashReceived: 33600, onlineReceived: 0, shortCollected: 400 },
-    ],
-    expenses: [
-      { label: 'Diesel', amount: 550 },
-      { label: 'Lunch', amount: 70 },
-    ],
-    denominations: { 500: 93 },
-  });
-
-  await submitHisab(demoPartner.id, {
-    date: isoDateDaysAgo(0),
-    openingStock: 50,
-    deliveries: [
-      { name: 'Shree Balaji Gas Agency', quantity: 2, rate: 1100, cashReceived: 2200, onlineReceived: 0, shortCollected: 0 },
-      { name: 'Annapurna Gas Suppliers', quantity: 10, rate: 1200, cashReceived: 10000, onlineReceived: 2000, shortCollected: 0 },
-      { name: 'Local Retail Sale', quantity: 38, rate: 1000, cashReceived: 37800, onlineReceived: 0, shortCollected: 200 },
-    ],
-    expenses: [
-      { label: 'Diesel', amount: 600 },
-      { label: 'Lunch', amount: 80 },
-    ],
-    denominations: { 500: 98, 100: 3, 20: 1 },
-  });
 }
 
 export async function createPartner({ name, username, password } = {}) {
@@ -285,4 +245,14 @@ export async function listSubmissions(partnerId) {
     ? await pool.query('SELECT * FROM submissions WHERE partner_id = $1 ORDER BY date DESC', [Number(partnerId)])
     : await pool.query('SELECT * FROM submissions ORDER BY date DESC');
   return result.rows.map(toSubmission);
+}
+
+// Test-only: the integration tests in test/store.test.js run against
+// whatever DATABASE_URL is configured, which today is the same Supabase
+// project the real app uses - there's no separate test database yet. Every
+// partner a test creates must be deleted again when that test finishes, or
+// it permanently pollutes the live admin dashboard (this happened once
+// already). Submissions cascade-delete automatically via the foreign key.
+export async function deletePartnerForTests(id) {
+  await pool.query('DELETE FROM partners WHERE id = $1', [Number(id)]);
 }

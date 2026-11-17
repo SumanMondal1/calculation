@@ -1,5 +1,34 @@
+/* Noto Sans + Noto Sans Bengali are bundled (not loaded from the internet -
+   this app has to work from any network, including none) and are designed
+   by the same type team specifically so Latin and Bengali text share the
+   same cap-height, x-height and baseline. Before this, English used "Inter"
+   while Bengali silently fell back to whatever font the phone happened to
+   have for that script - two unrelated fonts with different metrics, which
+   is why English and Bengali text never lined up next to each other. */
+@font-face {
+  font-family: 'Noto Sans';
+  src:
+    url('/fonts/NotoSans-Variable.ttf') format('truetype-variations'),
+    url('/fonts/NotoSans-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src:
+    url('/fonts/NotoSansBengali-Variable.ttf') format('truetype-variations'),
+    url('/fonts/NotoSansBengali-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  font-family: Inter, 'Noto Sans Bengali', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Noto Sans', 'Noto Sans Bengali', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #0f172a;
   line-height: 1.5;
   font-weight: 400;

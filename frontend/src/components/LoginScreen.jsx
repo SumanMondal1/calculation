@@ -54,8 +54,6 @@ export default function LoginScreen({ onLogin }) {
 
         <p className="auth-hint">
           {t('demoAdminLabel')} <code>admin</code> / <code>admin123</code>
-          <br />
-          {t('demoPartnerLabel')} <code>suresh</code> / <code>partner123</code>
         </p>
       </div>
     </div>
