@@ -1,0 +1,15 @@
+{
+  "name": "gas-agency-hisab",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "backend": "npm --workspace backend run dev",
+    "frontend": "npm --workspace frontend run dev",
+    "build": "npm --workspace frontend run build",
+    "test": "npm --workspace backend run test"
+  }
+}
