@@ -53,6 +53,15 @@ function toPublicPartner(row) {
   };
 }
 
+function toAgency(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    defaultRate: Number(row.default_rate),
+    createdAt: row.created_at,
+  };
+}
+
 function toSubmission(row) {
   return {
     id: row.id,
@@ -79,6 +88,15 @@ export async function initStore() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS agencies (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      default_rate NUMERIC NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS submissions (
       id SERIAL PRIMARY KEY,
       partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
@@ -97,6 +115,12 @@ export async function initStore() {
 }
 
 async function seedDemoData() {
+  const existingAgencies = await pool.query('SELECT id FROM agencies LIMIT 1');
+  if (existingAgencies.rows.length === 0) {
+    await createAgency({ name: 'Shree Balaji Gas Agency', defaultRate: 1100 });
+    await createAgency({ name: 'Annapurna Gas Suppliers', defaultRate: 1200 });
+  }
+
   const existing = await pool.query('SELECT id FROM partners WHERE username = $1', ['suresh']);
   if (existing.rows.length > 0) {
     return;
@@ -174,6 +198,31 @@ export async function listPartners() {
 export async function findPartnerById(id) {
   const result = await pool.query('SELECT * FROM partners WHERE id = $1', [Number(id)]);
   return result.rows[0] ? toPublicPartner(result.rows[0]) : null;
+}
+
+export async function createAgency({ name, defaultRate } = {}) {
+  const cleanName = String(name || '').trim();
+  if (!cleanName) {
+    throw new Error('Agency name is required');
+  }
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO agencies (name, default_rate) VALUES ($1, $2) RETURNING *',
+      [cleanName, Number(defaultRate || 0)],
+    );
+    return toAgency(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      throw new Error('An agency with that name already exists');
+    }
+    throw err;
+  }
+}
+
+export async function listAgencies() {
+  const result = await pool.query('SELECT * FROM agencies ORDER BY name ASC');
+  return result.rows.map(toAgency);
 }
 
 function createSession(session, partner) {

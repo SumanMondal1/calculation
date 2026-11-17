@@ -27,4 +27,6 @@ export const api = {
   partnerSubmissions: (token, partnerId) => request(`/api/partners/${partnerId}/submissions`, { token }),
   submitHisab: (token, payload) => request('/api/hisab/submit', { method: 'POST', token, body: payload }),
   mySubmissions: (token) => request('/api/hisab/mine', { token }),
+  listAgencies: (token) => request('/api/agencies', { token }),
+  createAgency: (token, data) => request('/api/agencies', { method: 'POST', token, body: data }),
 };

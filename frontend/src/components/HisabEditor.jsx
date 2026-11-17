@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { calculateHisab, calculateCashDenominationTotal, NOTE_VALUES, COIN_VALUES } from '../utils/hisabEngine';
+import { api } from '../api';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -27,20 +28,38 @@ function Card({ title, subtitle, children }) {
   );
 }
 
-// One unified table: every row - agency A, agency B, local retail sale - is
-// the exact same shape. Qty x Rate = Expected. Only Cash counts as physically
-// Collected today - an Online promise can't be verified on the spot, so it
-// stays part of Due. Shortage is a permanent discount nobody will ever pay
-// back, so it is subtracted out before Due is calculated, never added to it.
-function DeliveriesSection({ rows, setRows }) {
+// One unified table: every row - a saved agency, a one-off dealer, the local
+// retail sale - is the exact same shape. Qty x Rate = Expected. Only Cash
+// counts as physically Collected today - an Online promise can't be
+// verified on the spot, so it stays part of Due. Shortage is a permanent
+// discount nobody will ever pay back, so it is subtracted out before Due is
+// calculated, never added to it.
+function DeliveriesSection({ rows, setRows, agencies }) {
   const updateRow = (id, field, value) => {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
   };
+
+  const handleNameChange = (id, value) => {
+    setRows((current) => current.map((row) => {
+      if (row.id !== id) return row;
+      // Picked (or typed exactly) a known agency and haven't set a rate yet -
+      // fill in their agreed rate automatically so it isn't typed twice.
+      const match = agencies.find((a) => a.name.toLowerCase() === value.trim().toLowerCase());
+      if (match && !row.rate) {
+        return { ...row, name: value, rate: match.defaultRate };
+      }
+      return { ...row, name: value };
+    }));
+  };
+
   const addRow = () => setRows((current) => [...current, { id: nextId(current), name: '', quantity: 0, rate: 0, cashReceived: 0, onlineReceived: 0, shortCollected: 0 }]);
   const removeRow = (id) => setRows((current) => current.filter((row) => row.id !== id));
 
   return (
-    <Card title="📦 Deliveries & Sales" subtitle="Agency A, Agency B, Local Sale — every cylinder channel, same columns">
+    <Card title="📦 Deliveries & Sales" subtitle="Pick a saved agency below, or type a new name (e.g. a local sale) — same columns either way">
+      <datalist id="agency-options">
+        {agencies.map((agency) => <option key={agency.id} value={agency.name} />)}
+      </datalist>
       <div className="table-wrap">
         <table>
           <thead>
@@ -55,7 +74,7 @@ function DeliveriesSection({ rows, setRows }) {
               const due = expected - collected - Number(row.shortCollected || 0);
               return (
                 <tr key={row.id}>
-                  <td><input placeholder="e.g. Agency A / Local Sale" value={row.name} onChange={(e) => updateRow(row.id, 'name', e.target.value)} /></td>
+                  <td><input list="agency-options" placeholder="Agency name or 'Local Sale'" value={row.name} onChange={(e) => handleNameChange(row.id, e.target.value)} /></td>
                   <td><input type="number" min="0" className="num-input" value={row.quantity} onChange={(e) => updateRow(row.id, 'quantity', Number(e.target.value))} /></td>
                   <td><input type="number" min="0" className="num-input" value={row.rate} onChange={(e) => updateRow(row.id, 'rate', Number(e.target.value))} /></td>
                   <td className="muted-cell">{formatCurrency(expected)}</td>
@@ -73,8 +92,10 @@ function DeliveriesSection({ rows, setRows }) {
       </div>
       <button type="button" className="ghost-btn" onClick={addRow}>+ Add row (agency, dealer, local sale...)</button>
       <p className="hint mt-sm">
-        <strong>Online</strong> is a promise that can't be verified on the spot, so it stays part of <strong>Due</strong> until confirmed.
-        {' '}<strong>Shortage</strong> is a discount nobody will ever pay back, so it is never counted as Due.
+        Start typing in <strong>Name</strong> to pick a saved agency (its rate fills in automatically) - or type anything else
+        for a one-off dealer or local sale. <strong>Online</strong> is a promise that can't be verified on the spot, so it stays
+        part of <strong>Due</strong> until confirmed. <strong>Shortage</strong> is a discount nobody will ever pay back, so it is
+        never counted as Due.
       </p>
     </Card>
   );
@@ -201,12 +222,17 @@ const DEMO_EXPENSES = [
 // 98 x 500 + 3 x 100 + 1 x 20 = 49320, matching the demo's net cash exactly.
 const DEMO_DENOMINATIONS = { 500: 98, 200: 0, 100: 3, 50: 0, 20: 1, 10: 0, 5: 0, 2: 0, 1: 0 };
 
-export default function HisabEditor({ onSubmit, submitting, lastSavedDate }) {
+export default function HisabEditor({ token, onSubmit, submitting, lastSavedDate }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [openingStock, setOpeningStock] = useState(50);
   const [deliveries, setDeliveries] = useState(DEMO_DELIVERIES);
   const [expenses, setExpenses] = useState(DEMO_EXPENSES);
   const [denominations, setDenominations] = useState(DEMO_DENOMINATIONS);
+  const [agencies, setAgencies] = useState([]);
+
+  useEffect(() => {
+    api.listAgencies(token).then(setAgencies).catch(() => {});
+  }, [token]);
 
   const hisab = useMemo(
     () => calculateHisab({ openingStock, deliveries, expenses }),
@@ -235,7 +261,7 @@ export default function HisabEditor({ onSubmit, submitting, lastSavedDate }) {
             </label>
           </Card>
 
-          <DeliveriesSection rows={deliveries} setRows={setDeliveries} />
+          <DeliveriesSection rows={deliveries} setRows={setDeliveries} agencies={agencies} />
           <ExpensesSection expenses={expenses} setExpenses={setExpenses} />
           <DenominationSection denominations={denominations} setDenominations={setDenominations} netCashInHand={hisab.netCashInHand} />
         </main>

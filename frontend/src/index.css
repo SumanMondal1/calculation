@@ -18,8 +18,11 @@ body {
   overflow-x: hidden;
 }
 
-/* A slowly-drifting "aurora" of color behind the glass cards - gives the
-   whole app a living, breathing feel instead of a static gradient. */
+/* A soft "aurora" of color behind the glass cards. This used to drift
+   continuously, but every glass card above it uses backdrop-filter, which
+   re-samples whatever is behind it live - animating this forever forced a
+   GPU recomposite of every blurred card on every frame, which is what made
+   the app laggy on phones. Static now; still looks good, costs ~nothing. */
 body::before {
   content: '';
   position: fixed;
@@ -31,19 +34,12 @@ body::before {
     radial-gradient(circle at 88% 8%, rgba(6, 182, 212, 0.5) 0%, transparent 45%),
     radial-gradient(circle at 75% 85%, rgba(244, 114, 182, 0.45) 0%, transparent 45%),
     radial-gradient(circle at 15% 90%, rgba(99, 102, 241, 0.4) 0%, transparent 40%);
-  animation: auroraDrift 26s ease-in-out infinite alternate;
 }
 
 button, input, select { font: inherit; }
 h1, h2, h3, h4 { font-family: inherit; margin: 0; }
 
 /* ---------- motion ---------- */
-@keyframes auroraDrift {
-  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-  50% { transform: translate(-3%, 2%) rotate(5deg) scale(1.05); }
-  100% { transform: translate(2%, -2%) rotate(-4deg) scale(1); }
-}
-
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
@@ -66,9 +62,9 @@ h1, h2, h3, h4 { font-family: inherit; margin: 0; }
 
 /* ---------- glass primitive ---------- */
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 20px;
   box-shadow: 0 12px 40px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
@@ -246,7 +242,11 @@ input::placeholder { color: #94a3b8; }
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-table { width: 100%; border-collapse: collapse; }
+/* min-width stops columns from being crushed to unreadable widths on a
+   phone screen - .table-wrap scrolls horizontally past this instead. */
+table { width: 100%; min-width: 820px; border-collapse: collapse; }
+
+.table-wrap td:first-child input { min-width: 170px; }
 
 thead th {
   background: rgba(255, 255, 255, 0.08);
@@ -429,6 +429,38 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.045); }
 .admin-panel h2 { font-size: 1rem; margin-bottom: 4px; }
 .admin-panel h2.mt { margin-top: 18px; }
 
+/* ---------- admin sidebar nav ---------- */
+.admin-nav {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.nav-item:hover { background: rgba(255, 255, 255, 0.08); transform: translateX(2px); }
+.nav-item.active { background: rgba(129, 140, 248, 0.3); color: white; box-shadow: inset 0 0 0 1px rgba(165, 180, 252, 0.4); }
+.nav-icon { font-size: 1.1rem; }
+
+.card-sub-hint { color: #cbd5e1; font-size: 0.85rem; margin: 0 0 14px; line-height: 1.5; }
+
 .stacked-form { display: flex; flex-direction: column; gap: 10px; }
 
 .partner-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -452,6 +484,8 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.045); }
 .partner-pill span { font-weight: 400; font-size: 0.78rem; color: #94a3b8; }
 .partner-pill:hover { background: rgba(255, 255, 255, 0.13); transform: translateX(2px); }
 .partner-pill.active { background: rgba(129, 140, 248, 0.3); border-color: rgba(165, 180, 252, 0.55); }
+.partner-pill.static { cursor: default; }
+.partner-pill.static:hover { background: rgba(255, 255, 255, 0.07); transform: none; }
 
 .admin-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .admin-main h2 { font-size: 1.05rem; margin-bottom: 4px; }

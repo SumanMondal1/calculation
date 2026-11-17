@@ -40,7 +40,7 @@ export default function PartnerDashboard({ session, onLogout }) {
 
       {error && <div className="glass-card auth-error">{error}</div>}
 
-      <HisabEditor onSubmit={handleSubmit} submitting={submitting} lastSavedDate={lastSavedDate} />
+      <HisabEditor token={session.token} onSubmit={handleSubmit} submitting={submitting} lastSavedDate={lastSavedDate} />
 
       {mySubmissions.length > 0 && (
         <div className="glass-card history-card">

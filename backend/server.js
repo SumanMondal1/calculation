@@ -6,6 +6,8 @@ import {
   createPartner,
   listPartners,
   findPartnerById,
+  createAgency,
+  listAgencies,
   login,
   getSession,
   logout,
@@ -91,6 +93,21 @@ app.get('/api/partners/:id/submissions', authenticate, requireAdmin, asyncRoute(
     return res.status(404).json({ error: 'Partner not found' });
   }
   res.json(await listSubmissions(partner.id));
+}));
+
+// Agencies: a master list admin maintains so partners pick a known agency
+// (with its agreed rate) instead of free-typing a name every time.
+app.get('/api/agencies', authenticate, asyncRoute(async (req, res) => {
+  res.json(await listAgencies());
+}));
+
+app.post('/api/agencies', authenticate, requireAdmin, asyncRoute(async (req, res) => {
+  try {
+    const agency = await createAgency(req.body || {});
+    res.status(201).json(agency);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 }));
 
 // Delivery partner: calculate + submit the day's hisab.
